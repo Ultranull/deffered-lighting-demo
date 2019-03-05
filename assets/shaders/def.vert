@@ -1,4 +1,4 @@
-#version 330 core
+#version 420 core
 
 layout(location = 0) in vec3 vertpos;
 layout(location = 2) in vec2 vertuv;
@@ -9,9 +9,14 @@ out vec2 uv;
 out vec3 normal;
 out vec4 fragpos;
 
+layout(std140,binding=0)uniform camera{
+	mat4 projection;
+	mat4 view;
+};
 
-uniform mat4 view;
-uniform mat4 projection;
+
+//uniform mat4 view;
+//uniform mat4 projection;
 
 
 void main(){

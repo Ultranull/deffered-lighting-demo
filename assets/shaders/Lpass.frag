@@ -13,7 +13,7 @@ struct Light {
 	vec3 color;
 	float quad;
 };
-const int NUM_LIGHTS=10;
+const int NUM_LIGHTS=100;
 uniform Light lights[NUM_LIGHTS];
 uniform vec3 veiwPos;
 

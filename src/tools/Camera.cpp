@@ -1,5 +1,7 @@
 #include "Camera.h"
 
+#include<stdio.h>
+
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include "glm/gtc/matrix_transform.hpp"
@@ -30,6 +32,7 @@ void Camera::apply(GLFWwindow *window, float delta) {
 	glfwSetCursorPos(window, width / 2, height / 2);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+	
 	hangle += mouseSpeed * float(width / 2 - xpos);//theta
 	vangle += mouseSpeed * float(height / 2 - ypos);//phi
 
@@ -56,7 +59,7 @@ void Camera::apply(GLFWwindow *window, float delta) {
 	if (glfwGetKey(window, STRAFELEFT) == GLFW_PRESS) {
 		position -= right * delta * speed;
 	}
-	if (glfwGetKey(window, JUMP) == GLFW_PRESS) {
+	if (glfwGetKey(window, JUMP) == GLFW_PRESS){
 		position += vec3(0,1,0) * delta * speed;
 	}
 	if (glfwGetKey(window, CROUCH) == GLFW_PRESS) {

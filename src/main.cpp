@@ -2,10 +2,13 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <random>
+#include <ctime>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "tools/App.h"
 #include "tools/Camera.h"
@@ -74,6 +77,24 @@ struct Light {
 	}
 };
 
+void getError(int line) {
+	GLenum err(glGetError());
+	while (err != GL_NO_ERROR) {
+		string error;
+
+		switch (err) {
+		case GL_INVALID_OPERATION:      error = "INVALID_OPERATION";      break;
+		case GL_INVALID_ENUM:           error = "INVALID_ENUM";           break;
+		case GL_INVALID_VALUE:          error = "INVALID_VALUE";          break;
+		case GL_OUT_OF_MEMORY:          error = "OUT_OF_MEMORY";          break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:  error = "INVALID_FRAMEBUFFER_OPERATION";  break;
+		}
+		printf("GL_%s : %d", error.c_str(),line);
+		err = glGetError();
+	}
+}
+#define _getError() getError(__LINE__)
+
 class Game :public App {
 	Resource *R;
 
@@ -84,6 +105,8 @@ class Game :public App {
 	vector<Light> lights;
 
 	GLuint ibo,instances;
+
+	GLuint ubo;
 
 	int lightidx = 0,sstep=0;
 	vector<vec3> colors{ {1,1,1},{1,0,0},{0,1,0},{0,0,1},{0,1,1},{1,0,1},{1,1,0} };
@@ -110,7 +133,6 @@ class Game :public App {
 
 	void init() {
 		R = &Resource::getInstance();
-
 		Shader passv = R->addShader("pass.vert"),
 			passf = R->addShader("pass.frag"),
 			defv = R->addShader("def.vert"),
@@ -136,10 +158,10 @@ class Game :public App {
 
 		R->addTexture("uvmap", "uvmap.bmp");
 
-		monkey = loadOBJ(R->path+"monkey.obj");
+		monkey = loadOBJ(R->path+"less_face_monkey.obj");
 		lamp = loadOBJ(R->path+"sphere.obj");
 
-		cam = Camera(vec3(0,3,0), vec3(0,0,0), vec3(0,1,0));
+		cam = Camera(vec3(0,3,3), vec3(0,0,0)- vec3(0, 3, 3), vec3(0,1,0));
 		cam.perspective(window, 45, .1, 100);
 
 		vector<vec3> positions;
@@ -174,11 +196,11 @@ class Game :public App {
 		gBuffer.drawBuffers();
 		gBuffer.check();
 
-		lights = vector<Light>(10);
+		lights = vector<Light>(100);
 		lights[0]=(Light{{0,2,0},{1,1,1},(1/2)});
 		addInput(GLFW_KEY_E, [&](int action, int mods) {
 			if (action == GLFW_PRESS) {
-				lights[lightidx%10] = Light{ 
+				lights[lightidx%lights.size()] = Light{ 
 					cam.getPosition(),
 					colors[lightidx%colors.size()],
 					1/1.75
@@ -190,21 +212,50 @@ class Game :public App {
 			if (action == GLFW_PRESS) 
 				sstep++;
 		});
+
+		glGenBuffers(1, &ubo);
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4), NULL, GL_DYNAMIC_DRAW);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(cam.P()));
+		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(cam.V()));
+
+		GLuint loc=glGetUniformBlockIndex(gbuff.getProgramID(), "camera");
+		glUniformBlockBinding(gbuff.getProgramID(), loc, 0);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
+		_getError();
+
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+
 	}
 
 	void onClose() {
+		glDeleteBuffers(1, &ibo);
+		glDeleteBuffers(1, &ubo);
 		passthrough.cleanup();
-		gBuffer.cleanup();
-		monkey.cleanup();
-		pass.cleanup();
-		R->cleanup();
+		gBuffer.    cleanup();
+		monkey.     cleanup();
+		quad.       cleanup();
+		lamp.       cleanup();
+		simple.     cleanup();
+		gbuff.      cleanup();
+		lpass.      cleanup();
+		pass.       cleanup();
+		R->         cleanup();
 	}
 
 	void update(float delta) {
 		cam.perspective(window, 45, .1, 100);
 		cam.apply(window, delta);
+
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(cam.P()));
+		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(cam.V()));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 		//printf("%d\n", fps);
 		glfwSetWindowTitle(window, to_string(fps).c_str());
+
 	}
 
 	void render(float delta) {
@@ -212,9 +263,6 @@ class Game :public App {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		gbuff.bind();
-		gbuff.setUniform("projection", &cam.P());
-		gbuff.setUniform("view", &cam.V());
-
 		gbuff.setUniform("diffuse", R->bindTexture("uvmap", GL_TEXTURE0));
 		glBindVertexArray(monkey.vao);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, monkey.vertices.size(), instances);
@@ -245,13 +293,11 @@ class Game :public App {
 			GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
 		simple.bind();
-		simple.setUniform("view", &cam.V());
-		simple.setUniform("projection", &cam.P());
 		for (int i = 0; i < lights.size(); i++) {
 			simple.setUniform("color", &lights[i].color);
 			if(lights[i].pos==vec3(0))
 				simple.setUniform("model", &(translate(vec3(100))));
-			else simple.setUniform("model", &(translate(lights[i].pos)*scale(vec3(.5))));
+			else simple.setUniform("model", &(translate(lights[i].pos)*scale(vec3(.25))));
 			lamp.renderVertices(GL_QUADS);
 		}
 
