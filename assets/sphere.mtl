@@ -2,7 +2,7 @@
 #
 #
 
-newmtl Sphere_Phong[20]
+newmtl Sphere Mesh_Sphere_Phong[20]
 illum 2
 Ka 1.000000 1.000000 1.000000
 Kd 1.000000 1.000000 1.000000

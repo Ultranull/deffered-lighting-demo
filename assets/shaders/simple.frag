@@ -2,8 +2,9 @@
 out vec4 fragcolor;
 
 uniform float time;
-uniform vec3 color;
+
+in vec3 lampcolor;
 
 void main(){
-	fragcolor=vec4(color,1);
+	fragcolor=vec4(lampcolor,1);
 }

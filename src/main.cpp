@@ -105,6 +105,7 @@ class Game :public App {
 	vector<Light> lights;
 
 	GLuint ibo,instances;
+	GLuint lamp_ibo, lamp_instances;
 
 	GLuint ubo;
 
@@ -183,10 +184,28 @@ class Game :public App {
 		glBindVertexArray(0);
 
 
+		lights = vector<Light>(100, Light{vec3(0),vec3(0),0});
+		lights[0] = (Light{ {0,2,0},{1,1,1},(1 / 2) });
+
+		lamp_instances = lights.size();
+		glBindVertexArray(lamp.vao);
+		glGenBuffers(1, &lamp_ibo);
+		glBindBuffer(GL_ARRAY_BUFFER, lamp_ibo);
+		glBufferData(GL_ARRAY_BUFFER, lights.size() * sizeof(Light), &lights[0], GL_DYNAMIC_DRAW);
+		glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Light), (void*)offsetof(Light,pos));
+		glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(Light), (void*)offsetof(Light,color));
+		glEnableVertexAttribArray(6);
+		glEnableVertexAttribArray(7);
+		glVertexAttribDivisor(6, 1);
+		glVertexAttribDivisor(7, 1);
+		glBindVertexArray(0);
+
+
 		passthrough=FrameBuffer(1920,1080);
-		passthrough.addTexture("passthrough", GL_RGB, GL_RGB, GL_COLOR_ATTACHMENT0);
+		passthrough.addTexture("passthrough", GL_RGBA, GL_RGBA, GL_COLOR_ATTACHMENT0);
 		passthrough.addDepth();
 		passthrough.drawBuffers();
+
 
 		gBuffer = FrameBuffer(1920, 1080);
 		gBuffer.addTexture("position", GL_RGB16F, GL_RGB, GL_COLOR_ATTACHMENT0);
@@ -196,15 +215,19 @@ class Game :public App {
 		gBuffer.drawBuffers();
 		gBuffer.check();
 
-		lights = vector<Light>(100);
-		lights[0]=(Light{{0,2,0},{1,1,1},(1/2)});
 		addInput(GLFW_KEY_E, [&](int action, int mods) {
 			if (action == GLFW_PRESS) {
-				lights[lightidx%lights.size()] = Light{ 
+				unsigned int index = lightidx % lights.size();
+				lights[index] = Light{ 
 					cam.getPosition(),
 					colors[lightidx%colors.size()],
 					1/1.75
 				};
+				glBindVertexArray(lamp.vao);
+				glBindBuffer(GL_ARRAY_BUFFER, lamp_ibo);
+				glBufferSubData(GL_ARRAY_BUFFER, sizeof(Light)*(index)+offsetof(Light, pos), sizeof(vec3), &lights[index].pos);
+				glBufferSubData(GL_ARRAY_BUFFER, sizeof(Light)*(index)+offsetof(Light, color), sizeof(vec3), &lights[index].color);
+				glBindVertexArray(0);
 				lightidx = lightidx + 1;
 			}
 		});
@@ -230,6 +253,7 @@ class Game :public App {
 	}
 
 	void onClose() {
+		glDeleteBuffers(1, &lamp_ibo);
 		glDeleteBuffers(1, &ibo);
 		glDeleteBuffers(1, &ubo);
 		passthrough.cleanup();
@@ -293,13 +317,9 @@ class Game :public App {
 			GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
 		simple.bind();
-		for (int i = 0; i < lights.size(); i++) {
-			simple.setUniform("color", &lights[i].color);
-			if(lights[i].pos==vec3(0))
-				simple.setUniform("model", &(translate(vec3(100))));
-			else simple.setUniform("model", &(translate(lights[i].pos)*scale(vec3(.25))));
-			lamp.renderVertices(GL_QUADS);
-		}
+		simple.setUniform("model", &(scale(vec3(.25))));
+		glBindVertexArray(lamp.vao); 
+		glDrawArraysInstanced(GL_TRIANGLES, 0, lamp.vertices.size(), lamp_instances);
 
 		FrameBuffer::bindDefualt();
 		viewportinit(window);
