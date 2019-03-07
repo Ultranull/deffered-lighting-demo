@@ -88,8 +88,8 @@
       <AdditionalDependencies>opengl32.lib;glew32.lib;glew32s.lib;glfw3.lib;glfw3dll.lib;SOIL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)lib\*.dll" "$(ProjectDir)bin\*.dll" 
-xcopy "$(ProjectDir)assets\*" "$(ProjectDir)bin\assets\*"  /e</Command>
+      <Command>xcopy "$(ProjectDir)lib\*.dll" "$(ProjectDir)bin\*.dll"  /Y 
+xcopy "$(ProjectDir)assets\*" "$(ProjectDir)bin\assets\*"  /e /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

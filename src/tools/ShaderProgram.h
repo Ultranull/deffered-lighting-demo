@@ -25,10 +25,10 @@ public:
 	void cleanup();
 
 	void setUniform(std::string name, glm::vec3 *v);
+	void setUniform(std::string name, glm::vec4 *v);
 	void setUniform(std::string name, glm::mat4 *m);
 	void setUniform(std::string name, float f);
 	void setUniform(std::string name, int i);
-
 
 	void bind();
 

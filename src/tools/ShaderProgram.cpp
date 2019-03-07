@@ -123,6 +123,12 @@ void Program::setUniform(std::string name, glm::vec3 *v) {
 	glUniform3fv(id,1, &(*v)[0]);
 }
 
+void Program::setUniform(std::string name, glm::vec4 *v) {
+	GLuint id = glGetUniformLocation(programID, name.c_str());
+	if (id == -1)return;
+	glUniform4fv(id, 1, &(*v)[0]);
+}
+
 void Program::setUniform(std::string name, glm::mat4 *m) {
 	GLuint id = glGetUniformLocation(programID, name.c_str());
 	if (id == -1)return;

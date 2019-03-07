@@ -20,6 +20,26 @@
 using namespace glm;
 using namespace std;
 
+//https://forums.khronos.org/showthread.php/67968-upload-struct-array-to-uniform-block-array
+
+void getError(int line) {
+	GLenum err(glGetError());
+	while (err != GL_NO_ERROR) {
+		string error;
+
+		switch (err) {
+		case GL_INVALID_OPERATION:      error = "INVALID_OPERATION";      break;
+		case GL_INVALID_ENUM:           error = "INVALID_ENUM";           break;
+		case GL_INVALID_VALUE:          error = "INVALID_VALUE";          break;
+		case GL_OUT_OF_MEMORY:          error = "OUT_OF_MEMORY";          break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:  error = "INVALID_FRAMEBUFFER_OPERATION";  break;
+		}
+		printf("GL_%s : %d", error.c_str(), line);
+		err = glGetError();
+	}
+}
+#define _getError() getError(__LINE__)
+
 Mesh loadOBJ(string fn) {
 
 	vector<vec3> verts_;
@@ -69,31 +89,13 @@ struct Light {
 	vec3 pos;
 	vec3 color;
 	float quad;
-	
-	void bind(Program *shader,int i) {
+	void bind(Program *shader, int i) {
 		shader->setUniform("lights[" + to_string(i) + "].pos", &pos);
 		shader->setUniform("lights[" + to_string(i) + "].color", &color);
 		shader->setUniform("lights[" + to_string(i) + "].quad", quad);
 	}
 };
 
-void getError(int line) {
-	GLenum err(glGetError());
-	while (err != GL_NO_ERROR) {
-		string error;
-
-		switch (err) {
-		case GL_INVALID_OPERATION:      error = "INVALID_OPERATION";      break;
-		case GL_INVALID_ENUM:           error = "INVALID_ENUM";           break;
-		case GL_INVALID_VALUE:          error = "INVALID_VALUE";          break;
-		case GL_OUT_OF_MEMORY:          error = "OUT_OF_MEMORY";          break;
-		case GL_INVALID_FRAMEBUFFER_OPERATION:  error = "INVALID_FRAMEBUFFER_OPERATION";  break;
-		}
-		printf("GL_%s : %d", error.c_str(),line);
-		err = glGetError();
-	}
-}
-#define _getError() getError(__LINE__)
 
 class Game :public App {
 	Resource *R;
@@ -107,7 +109,7 @@ class Game :public App {
 	GLuint ibo,instances;
 	GLuint lamp_ibo, lamp_instances;
 
-	GLuint ubo;
+	GLuint ubo,light_ubo;
 
 	int lightidx = 0,sstep=0;
 	vector<vec3> colors{ {1,1,1},{1,0,0},{0,1,0},{0,0,1},{0,1,1},{1,0,1},{1,1,0} };
@@ -166,7 +168,7 @@ class Game :public App {
 		cam.perspective(window, 45, .1, 100);
 
 		vector<vec3> positions;
-		int num = 7;
+		int num = 13;
 		float sep = 3;
 		for (int r = 0; r < num; r++)
 			for (int c = 0; c < num; c++)
@@ -215,12 +217,27 @@ class Game :public App {
 		gBuffer.drawBuffers();
 		gBuffer.check();
 
+
+		glGenBuffers(1, &ubo);
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4), NULL, GL_DYNAMIC_DRAW);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(cam.P()));
+		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(cam.V()));
+
+		GLuint loc = glGetUniformBlockIndex(gbuff.getProgramID(), "camera");
+		glUniformBlockBinding(gbuff.getProgramID(), loc, 0);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+
+
+
 		addInput(GLFW_KEY_E, [&](int action, int mods) {
 			if (action == GLFW_PRESS) {
 				unsigned int index = lightidx % lights.size();
 				lights[index] = Light{ 
-					cam.getPosition(),
-					colors[lightidx%colors.size()],
+					vec4(cam.getPosition(),1),
+					vec4(colors[lightidx%colors.size()],1),
 					1/1.75
 				};
 				glBindVertexArray(lamp.vao);
@@ -228,6 +245,7 @@ class Game :public App {
 				glBufferSubData(GL_ARRAY_BUFFER, sizeof(Light)*(index)+offsetof(Light, pos), sizeof(vec3), &lights[index].pos);
 				glBufferSubData(GL_ARRAY_BUFFER, sizeof(Light)*(index)+offsetof(Light, color), sizeof(vec3), &lights[index].color);
 				glBindVertexArray(0);
+
 				lightidx = lightidx + 1;
 			}
 		});
@@ -236,26 +254,13 @@ class Game :public App {
 				sstep++;
 		});
 
-		glGenBuffers(1, &ubo);
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4), NULL, GL_DYNAMIC_DRAW);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(cam.P()));
-		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(cam.V()));
-
-		GLuint loc=glGetUniformBlockIndex(gbuff.getProgramID(), "camera");
-		glUniformBlockBinding(gbuff.getProgramID(), loc, 0);
-		glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
-		_getError();
-
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-
 	}
 
 	void onClose() {
 		glDeleteBuffers(1, &lamp_ibo);
 		glDeleteBuffers(1, &ibo);
 		glDeleteBuffers(1, &ubo);
+		glDeleteBuffers(1, &light_ubo);
 		passthrough.cleanup();
 		gBuffer.    cleanup();
 		monkey.     cleanup();
@@ -303,7 +308,7 @@ class Game :public App {
 		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("normal"));
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("albedo-spec"));
-		for (int i = 0; i < lights.size(); i++) 
+		for (int i = 0; i < lights.size(); i++)
 			lights[i].bind(&lpass, i);
 		lpass.setUniform("position", 0);
 		lpass.setUniform("normal", 1);

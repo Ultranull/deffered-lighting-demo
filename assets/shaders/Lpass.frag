@@ -1,4 +1,4 @@
-#version 330 core
+#version 420 core
 out vec4 color;
 
 in vec2 uv;
@@ -13,8 +13,10 @@ struct Light {
 	vec3 color;
 	float quad;
 };
+
 const int NUM_LIGHTS=100;
 uniform Light lights[NUM_LIGHTS];
+
 uniform vec3 veiwPos;
 
 void main(){
@@ -24,10 +26,10 @@ void main(){
 
 	vec3 lighting=diffuse *.001;
 	for(int i=0;i<NUM_LIGHTS;i++){
-		vec3 lightdir=normalize(lights[i].pos-fragpos);
-		vec3 diff= max(dot(normal,lightdir),0)*diffuse*lights[i].color;
+		vec3 lightdir=normalize(vec3(lights[i].pos)-fragpos);
+		vec3 diff= max(dot(normal,lightdir),0)*diffuse*vec3(lights[i].color);
 
-		float dist=length(lights[i].pos-fragpos);
+		float dist=length(vec3(lights[i].pos)-fragpos);
 		lighting+=diff/(1+dist*dist*lights[i].quad);
 	}
 	color=vec4(lighting,1);
