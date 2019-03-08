@@ -20,8 +20,6 @@
 using namespace glm;
 using namespace std;
 
-//https://forums.khronos.org/showthread.php/67968-upload-struct-array-to-uniform-block-array
-
 void getError(int line) {
 	GLenum err(glGetError());
 	while (err != GL_NO_ERROR) {
@@ -85,6 +83,7 @@ Mesh loadOBJ(string fn) {
 	}
 	return Mesh(verts);
 }
+
 struct Light {
 	vec3 pos;
 	vec3 color;
@@ -109,7 +108,7 @@ class Game :public App {
 	GLuint ibo,instances;
 	GLuint lamp_ibo, lamp_instances;
 
-	GLuint ubo,light_ubo;
+	GLuint ubo;
 
 	int lightidx = 0,sstep=0;
 	vector<vec3> colors{ {1,1,1},{1,0,0},{0,1,0},{0,0,1},{0,1,1},{1,0,1},{1,1,0} };
@@ -260,7 +259,6 @@ class Game :public App {
 		glDeleteBuffers(1, &lamp_ibo);
 		glDeleteBuffers(1, &ibo);
 		glDeleteBuffers(1, &ubo);
-		glDeleteBuffers(1, &light_ubo);
 		passthrough.cleanup();
 		gBuffer.    cleanup();
 		monkey.     cleanup();
