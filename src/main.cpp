@@ -106,11 +106,7 @@ class Game :public App {
 	FrameBuffer passthrough,gBuffer;
 	vector<Light> lights;
 
-	Buffer ibuffer;
-
-	GLuint lamp_ibo, lamp_instances;
-
-	GLuint ubo;
+	Buffer cBuffer;
 
 	int lightidx = 0,sstep=0;
 	vector<vec3> colors{ {1,1,1},{1,0,0},{0,1,0},{0,0,1},{0,1,1},{1,0,1},{1,1,0} };
@@ -176,31 +172,20 @@ class Game :public App {
 				positions.push_back(vec3(r*sep,0, c*sep)- vec3((num/2)*sep,0, (num / 2)*sep));
 
 
-		glBindVertexArray(monkey.vao);
-
-		ibuffer = Buffer(GL_ARRAY_BUFFER);
-		ibuffer.bind();
-		ibuffer.setData<vec3>(positions, GL_STATIC_DRAW);
-		ibuffer.bindPointerDiv(1, 6, 3, GL_FLOAT);
-
-		glBindVertexArray(0);
+		Buffer *ibo = monkey.vaObject.bindBuffer<vec3>("instanced", GL_ARRAY_BUFFER);
+		ibo->setData<vec3>(positions, GL_STATIC_DRAW);
+		ibo->bindPointerDiv(1, 6, 3, GL_FLOAT);
+		monkey.vaObject.unbind();
 
 
 		lights = vector<Light>(100, Light{vec3(0),vec3(0),0});
 		lights[0] = (Light{ {0,2,0},{1,1,1},(1 / 2) });
 
-		lamp_instances = lights.size();
-		glBindVertexArray(lamp.vao);
-		glGenBuffers(1, &lamp_ibo);
-		glBindBuffer(GL_ARRAY_BUFFER, lamp_ibo);
-		glBufferData(GL_ARRAY_BUFFER, lights.size() * sizeof(Light), &lights[0], GL_DYNAMIC_DRAW);
-		glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Light), (void*)offsetof(Light,pos));
-		glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(Light), (void*)offsetof(Light,color));
-		glEnableVertexAttribArray(6);
-		glEnableVertexAttribArray(7);
-		glVertexAttribDivisor(6, 1);
-		glVertexAttribDivisor(7, 1);
-		glBindVertexArray(0);
+		Buffer *lamp_ibo = lamp.vaObject.bindBuffer<Light>("instanced", GL_ARRAY_BUFFER);
+		lamp_ibo->setData(lights, GL_DYNAMIC_DRAW);
+		lamp_ibo->bindPointer(6, 3, GL_FLOAT, (void*)offsetof(Light, pos), 1);
+		lamp_ibo->bindPointer(7, 3, GL_FLOAT, (void*)offsetof(Light, color), 1);
+		lamp.vaObject.unbind();
 
 
 		passthrough=FrameBuffer(1920,1080);
@@ -217,17 +202,17 @@ class Game :public App {
 		gBuffer.drawBuffers();
 		gBuffer.check();
 
-		glGenBuffers(1, &ubo);
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4), NULL, GL_DYNAMIC_DRAW);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(cam.P()));
-		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(cam.V()));
+		cBuffer = Buffer(GL_UNIFORM_BUFFER);
+		cBuffer.bind();
+		cBuffer.setData<mat4>(2, GL_DYNAMIC_DRAW);
+		cBuffer.setSubData(0, sizeof(glm::mat4), glm::value_ptr(cam.P()));
+		cBuffer.setSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(cam.V()));
+
 
 		GLuint loc = glGetUniformBlockIndex(gbuff.getProgramID(), "camera");
 		glUniformBlockBinding(gbuff.getProgramID(), loc, 0);
-		glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, cBuffer.id);
+		cBuffer.unbind();
 
 
 
@@ -239,11 +224,10 @@ class Game :public App {
 					vec4(colors[lightidx%colors.size()],1),
 					1/1.75
 				};
-				glBindVertexArray(lamp.vao);
-				glBindBuffer(GL_ARRAY_BUFFER, lamp_ibo);
-				glBufferSubData(GL_ARRAY_BUFFER, sizeof(Light)*(index)+offsetof(Light, pos), sizeof(vec3), &lights[index].pos    );
-				glBufferSubData(GL_ARRAY_BUFFER, sizeof(Light)*(index)+offsetof(Light, color), sizeof(vec3), &lights[index].color);
-				glBindVertexArray(0);
+
+				lamp.vaObject.updateData("instanced", sizeof(Light)*(index)+offsetof(Light, pos), sizeof(vec3), &lights[index].pos);
+				lamp.vaObject.updateData("instanced", sizeof(Light)*(index)+offsetof(Light, color), sizeof(vec3), &lights[index].color);
+				lamp.vaObject.unbind();
 
 				lightidx = lightidx + 1;
 			}
@@ -252,14 +236,10 @@ class Game :public App {
 			if (action == GLFW_PRESS) 
 				sstep++;
 		});
-
 	}
 
 	void onClose() {
-		glDeleteBuffers(1, &lamp_ibo);
-		//glDeleteBuffers(1, &ibo); 
-		ibuffer.cleanup();
-		glDeleteBuffers(1, &ubo);
+		cBuffer.    cleanup();
 		passthrough.cleanup();
 		gBuffer.    cleanup();
 		monkey.     cleanup();
@@ -276,10 +256,10 @@ class Game :public App {
 		cam.perspective(window, 45, .1, 100);
 		cam.apply(window, delta);
 
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(cam.P()));
-		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(cam.V()));
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		cBuffer.bind();
+		cBuffer.setSubData(0, sizeof(glm::mat4), glm::value_ptr(cam.P()));
+		cBuffer.setSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(cam.V()));
+		cBuffer.unbind();
 
 		//printf("%d\n", fps);
 		glfwSetWindowTitle(window, to_string(fps).c_str());
@@ -292,8 +272,9 @@ class Game :public App {
 
 		gbuff.bind();
 		gbuff.setUniform("diffuse", R->bindTexture("uvmap", GL_TEXTURE0));
-		glBindVertexArray(monkey.vao);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, monkey.vertices.size(), ibuffer.getLength());
+		monkey.vaObject.bind();
+		int i = monkey.vaObject.getBuffer("instanced")->getLength();
+		glDrawArraysInstanced(GL_TRIANGLES, 0, monkey.vertices.size(),i);
 		
 		
 		
@@ -322,8 +303,9 @@ class Game :public App {
 
 		simple.bind();
 		simple.setUniform("model", &(scale(vec3(.25))));
-		glBindVertexArray(lamp.vao); 
-		glDrawArraysInstanced(GL_TRIANGLES, 0, lamp.vertices.size(), lamp_instances);
+		lamp.vaObject.bind();
+		glDrawArraysInstanced(GL_TRIANGLES, 0, lamp.vertices.size(),
+			lamp.vaObject.getBuffer("instanced")->getLength());
 
 		FrameBuffer::bindDefualt();
 		viewportinit(window);

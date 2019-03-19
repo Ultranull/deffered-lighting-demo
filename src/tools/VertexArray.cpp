@@ -3,7 +3,7 @@
 
 
 
- VertexArray::VertexArray() {
+VertexArray::VertexArray() {
 	glGenVertexArrays(1, &id);
 }
 
@@ -28,7 +28,7 @@ VertexArray::~VertexArray()
 	}
 }
 
- void VertexArray::updateData(std::string name, GLintptr offset, GLsizeiptr size, void * data) {
+ void VertexArray::updateData(std::string name, GLintptr offset, GLsizeiptr size,const void * data) {
 	Buffer *buf = buffers[name];
 	bind();
 	buf->bind();
@@ -39,11 +39,3 @@ VertexArray::~VertexArray()
 	return buffers[name];
 }
 
-template<typename T>
-Buffer * VertexArray::bindBuffer(std::string name, GLenum type) {
-	bind();
-	Buffer *buf = new Buffer(type);
-	buffers.insert(std::make_pair(name, buf));
-	buf->bind();
-	return buf;
-}

@@ -26,7 +26,7 @@
 	glDeleteBuffers(1, &id);
 }
 
- void Buffer::setSubData(GLintptr offset, GLsizeiptr size, void * data) {
+ void Buffer::setSubData(GLintptr offset, GLsizeiptr size,const void * data) {
 	glBufferSubData(type, offset, size, data);
 }
 
@@ -41,8 +41,8 @@
 	bindPointer(loc, size, tp, stride, offset, 0);
 }
 
- void Buffer::bindPointer(GLuint loc, GLuint size, GLenum tp, void * offset) {
-	bindPointer(loc, size, tp, typeSize, offset, 0);
+ void Buffer::bindPointer(GLuint loc, GLuint size, GLenum tp, void * offset,GLuint div) {
+	bindPointer(loc, size, tp, typeSize, offset, div);
 }
 
  void Buffer::bindPointerDiv(GLuint div, GLuint loc, GLuint size, GLenum tp, GLuint stride) {

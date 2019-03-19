@@ -1,10 +1,25 @@
 #include "Mesh.h"
 
+#include "Buffer.h"
+
 
 
 void Mesh::bindmeshindexed() {
 
-	glGenVertexArrays(1, &vao);
+	vaObject = VertexArray();
+	Buffer *vbuffer = vaObject.bindBuffer<Vertex>("vertexes", GL_ARRAY_BUFFER);
+	vbuffer->setData(vertices, GL_STATIC_DRAW);
+	vbuffer->bindPointer(0, 3, GL_FLOAT, (void*)offsetof(Vertex, pos));
+	vbuffer->bindPointer(1, 3, GL_FLOAT, (void*)offsetof(Vertex, color));
+	vbuffer->bindPointer(2, 2, GL_FLOAT, (void*)offsetof(Vertex, UV));
+	vbuffer->bindPointer(3, 3, GL_FLOAT, (void*)offsetof(Vertex, normal));
+	vbuffer->unbind();
+
+	Buffer *ebuffer = vaObject.bindBuffer<unsigned int>("indices", GL_ELEMENT_ARRAY_BUFFER);
+	ebuffer->setData(indices, GL_STATIC_DRAW);
+	ebuffer->unbind();
+
+	/*glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vbo);
 	glGenBuffers(1, &ebo);
 
@@ -15,28 +30,31 @@ void Mesh::bindmeshindexed() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, UV));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos)   );
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color) );
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, UV)    );
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
-	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
-	glVertexAttribIPointer(6, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, boneID));
-	glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, weights));
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
-	glEnableVertexAttribArray(3);
-	glEnableVertexAttribArray(4);
-	glEnableVertexAttribArray(5);
-	glEnableVertexAttribArray(6);
-	glEnableVertexAttribArray(7);
+	glEnableVertexAttribArray(3);*/
 }
 
 
 void Mesh::bindmesh() {
-	glGenVertexArrays(1, &vao);
+
+
+	vaObject = VertexArray();
+	Buffer *vbuffer = vaObject.bindBuffer<Vertex>("vertexes", GL_ARRAY_BUFFER);
+	vbuffer->setData(vertices, GL_STATIC_DRAW);
+	vbuffer->bindPointer(0, 3, GL_FLOAT, (void*)offsetof(Vertex, pos));
+	vbuffer->bindPointer(1, 3, GL_FLOAT, (void*)offsetof(Vertex, color));
+	vbuffer->bindPointer(2, 2, GL_FLOAT, (void*)offsetof(Vertex, UV));
+	vbuffer->bindPointer(3, 3, GL_FLOAT, (void*)offsetof(Vertex, normal));
+	vbuffer->unbind();
+
+	/*glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vbo);
 
 	glBindVertexArray(vao);
@@ -47,15 +65,13 @@ void Mesh::bindmesh() {
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, UV));
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
-	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 	glEnableVertexAttribArray(3);
 	glEnableVertexAttribArray(4);
-	glEnableVertexAttribArray(5);
+	glEnableVertexAttribArray(5);*/
 }
 
 Mesh::Mesh() {
@@ -72,20 +88,26 @@ Mesh::Mesh(std::vector<Vertex> t_verts) :
 }
 
 void Mesh::render(GLuint method) {
-	glBindVertexArray(vao);
+	//glBindVertexArray(vao);
+	vaObject.bind();
 	glDrawElements(method, indices.size(), GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
+	//glBindVertexArray(0);
+	vaObject.unbind();
 	
 }
 
 void Mesh::renderVertices(GLuint method) {
-	glBindVertexArray(vao);
+	//glBindVertexArray(vao);
+	vaObject.bind();
 	glDrawArrays(method, 0, vertices.size());
-	glBindVertexArray(0);
+	//glBindVertexArray(0);
+	vaObject.unbind();
 }
 
 void Mesh::cleanup() {
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
+	vaObject.cleanup();
+
+	//glDeleteVertexArrays(1, &vao);
+	//glDeleteBuffers(1, &vbo);
+	//glDeleteBuffers(1, &ebo);
 }
