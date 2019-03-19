@@ -1,5 +1,5 @@
 # deffered-lighting-demo
-Demonatration of deffered lighting.
+Demonstration of deffered lighting.
 
 ![demo screenshot](assets/textures/screenshot.png)
 
