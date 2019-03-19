@@ -51,31 +51,4 @@ inline void Buffer::setData(size_t size, GLenum usage) {
 	glBufferData(type, length * typeSize, NULL, usage);
 }
 
-/*
-
-* 
-* lamp.getVAO()->bind();
-* Buffer *ibo=lamp.getVAO()->getBuffer("instance");
-* ibo->setSubData(sizeof(Light)*(index)+offsetof(Light, pos), sizeof(vec3), &lights[index].pos    );
-* ibo->setSubData(sizeof(Light)*(index)+offsetof(Light, color), sizeof(vec3), &lights[index].color);
-* lamp.getVAO()->unbind();
-* 
-* 
-* VertexArray *vao=lamp.getVAO();
-* vao->updateData("intance",
-*	sizeof(Light)*(index)+offsetof(Light, pos), sizeof(vec3), &lights[index].pos);
-* vao->unbind();
-* 
-* vao=VertexArray();
-* Buffer *vbo=vao.bindBuffer<Vertex>("vertexes",GL_ARRAY_BUFFER);
-* vbo->setData(vertices, GL_STATIC_DRAW);
-* vbo->bindPointer(0, 3, GL_FLOAT, (void*)offsetof(Vertex, pos));
-* vbo->bindPointer(1, 3, GL_FLOAT, (void*)offsetof(Vertex, color));
-* vbo->bindPointer(2, 2, GL_FLOAT, (void*)offsetof(Vertex, UV));
-* 
-* Buffer *ebo=vao.bindBuffer<unsigned int>("indecies",GL_ELEMENT_ARRAY_BUFFER);
-* ebo->setData(indices, GL_STATIC_DRAW);
-* 
-* 
-* */
 

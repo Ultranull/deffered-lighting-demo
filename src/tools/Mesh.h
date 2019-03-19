@@ -16,13 +16,9 @@ struct Vertex {
 class Mesh {
 	std::vector<unsigned int> indices;
 
-	//GLuint vbo;
-	//GLuint ebo;
-
 	void bindmeshindexed();
 	void bindmesh();
 public:
-	//GLuint vao;
 	VertexArray vaObject;
 	std::vector<Vertex> vertices;
 
