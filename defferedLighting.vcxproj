@@ -134,6 +134,7 @@ xcopy "$(ProjectDir)assets\*" "$(ProjectDir)bin\assets\*"  /e /Y</Command>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\tools\Buffer.cpp" />
     <ClCompile Include="src\tools\FrameBuffer.cpp" />
     <ClCompile Include="include\glm\detail\glm.cpp" />
     <ClCompile Include="src\tools\Resource.cpp" />
@@ -142,8 +143,10 @@ xcopy "$(ProjectDir)assets\*" "$(ProjectDir)bin\assets\*"  /e /Y</Command>
     <ClCompile Include="src\tools\Camera.cpp" />
     <ClCompile Include="src\tools\Mesh.cpp" />
     <ClCompile Include="src\tools\ShaderProgram.cpp" />
+    <ClCompile Include="src\tools\VertexArray.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\tools\Buffer.h" />
     <ClInclude Include="src\tools\FrameBuffer.h" />
     <ClInclude Include="include\GLFW\glfw3.h" />
     <ClInclude Include="include\GLFW\glfw3native.h" />
@@ -304,6 +307,7 @@ xcopy "$(ProjectDir)assets\*" "$(ProjectDir)bin\assets\*"  /e /Y</Command>
     <ClInclude Include="src\tools\Camera.h" />
     <ClInclude Include="src\tools\Mesh.h" />
     <ClInclude Include="src\tools\ShaderProgram.h" />
+    <ClInclude Include="src\tools\VertexArray.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\simple.frag" />

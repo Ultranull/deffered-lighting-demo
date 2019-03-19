@@ -16,6 +16,7 @@
 #include "tools/Resource.h"
 #include "tools/ShaderProgram.h"
 #include "tools/FrameBuffer.h"
+#include "tools/Buffer.h"
 
 using namespace glm;
 using namespace std;
@@ -105,7 +106,8 @@ class Game :public App {
 	FrameBuffer passthrough,gBuffer;
 	vector<Light> lights;
 
-	GLuint ibo,instances;
+	Buffer ibuffer;
+
 	GLuint lamp_ibo, lamp_instances;
 
 	GLuint ubo;
@@ -174,14 +176,13 @@ class Game :public App {
 				positions.push_back(vec3(r*sep,0, c*sep)- vec3((num/2)*sep,0, (num / 2)*sep));
 
 
-		instances = positions.size();
 		glBindVertexArray(monkey.vao);
-		glGenBuffers(1, &ibo);
-		glBindBuffer(GL_ARRAY_BUFFER, ibo);
-		glBufferData(GL_ARRAY_BUFFER, positions.size()*sizeof(vec3), &positions[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
-		glEnableVertexAttribArray(6);
-		glVertexAttribDivisor(6, 1);
+
+		ibuffer = Buffer(GL_ARRAY_BUFFER);
+		ibuffer.bind();
+		ibuffer.setData<vec3>(positions, GL_STATIC_DRAW);
+		ibuffer.bindPointerDiv(1, 6, 3, GL_FLOAT);
+
 		glBindVertexArray(0);
 
 
@@ -216,7 +217,6 @@ class Game :public App {
 		gBuffer.drawBuffers();
 		gBuffer.check();
 
-
 		glGenBuffers(1, &ubo);
 		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 		glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4), NULL, GL_DYNAMIC_DRAW);
@@ -241,7 +241,7 @@ class Game :public App {
 				};
 				glBindVertexArray(lamp.vao);
 				glBindBuffer(GL_ARRAY_BUFFER, lamp_ibo);
-				glBufferSubData(GL_ARRAY_BUFFER, sizeof(Light)*(index)+offsetof(Light, pos), sizeof(vec3), &lights[index].pos);
+				glBufferSubData(GL_ARRAY_BUFFER, sizeof(Light)*(index)+offsetof(Light, pos), sizeof(vec3), &lights[index].pos    );
 				glBufferSubData(GL_ARRAY_BUFFER, sizeof(Light)*(index)+offsetof(Light, color), sizeof(vec3), &lights[index].color);
 				glBindVertexArray(0);
 
@@ -257,7 +257,8 @@ class Game :public App {
 
 	void onClose() {
 		glDeleteBuffers(1, &lamp_ibo);
-		glDeleteBuffers(1, &ibo);
+		//glDeleteBuffers(1, &ibo); 
+		ibuffer.cleanup();
 		glDeleteBuffers(1, &ubo);
 		passthrough.cleanup();
 		gBuffer.    cleanup();
@@ -292,7 +293,7 @@ class Game :public App {
 		gbuff.bind();
 		gbuff.setUniform("diffuse", R->bindTexture("uvmap", GL_TEXTURE0));
 		glBindVertexArray(monkey.vao);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, monkey.vertices.size(), instances);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, monkey.vertices.size(), ibuffer.getLength());
 		
 		
 		
