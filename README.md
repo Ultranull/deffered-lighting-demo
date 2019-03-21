@@ -1,7 +1,7 @@
 # deffered-lighting-demo
 Demonstration of deffered lighting.
 
-![demo screenshot](assets/textures/screenshot.png)
+![demo screenshot](assets/textures/screenshot.bmp)
 
 ## controls
 |key press| action|
@@ -10,4 +10,5 @@ Demonstration of deffered lighting.
 | space and shift| ascend and descend|
 |mouse|look control|
 |'e'|place a light at camera location|
-|'q'|cycle textures|
+|'q'|cycle render stage textures|
+|'f'|take a screenshot (saved as 'screenshot.bmp' in the working directory)|
