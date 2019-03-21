@@ -137,6 +137,7 @@ xcopy "$(ProjectDir)assets\*" "$(ProjectDir)bin\assets\*"  /e /Y</Command>
     <ClCompile Include="src\tools\Buffer.cpp" />
     <ClCompile Include="src\tools\FrameBuffer.cpp" />
     <ClCompile Include="include\glm\detail\glm.cpp" />
+    <ClCompile Include="src\tools\Material.cpp" />
     <ClCompile Include="src\tools\Resource.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\tools\App.cpp" />
@@ -302,6 +303,7 @@ xcopy "$(ProjectDir)assets\*" "$(ProjectDir)bin\assets\*"  /e /Y</Command>
     <ClInclude Include="include\GL\glxew.h" />
     <ClInclude Include="include\GL\wglew.h" />
     <ClInclude Include="include\SOIL.h" />
+    <ClInclude Include="src\tools\Material.h" />
     <ClInclude Include="src\tools\Resource.h" />
     <ClInclude Include="src\tools\App.h" />
     <ClInclude Include="src\tools\Camera.h" />

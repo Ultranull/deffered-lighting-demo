@@ -5,6 +5,8 @@
 #include <random>
 #include <ctime>
 
+#include <SOIL.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
@@ -132,6 +134,7 @@ class Game :public App {
 	}
 
 	void init() {
+		glfwSwapInterval(0);
 		R = &Resource::getInstance();
 		Shader passv = R->addShader("pass.vert"),
 			passf = R->addShader("pass.frag"),
@@ -235,6 +238,14 @@ class Game :public App {
 		addInput(GLFW_KEY_Q, [&](int action, int mods) {
 			if (action == GLFW_PRESS) 
 				sstep++;
+		});
+		addInput(GLFW_KEY_F, [&](int action, int mods) {
+			if (action == GLFW_PRESS) {
+				int h, w;
+				glfwGetFramebufferSize(window, &w, &h);
+				SOIL_save_screenshot("screenshot.bmp", SOIL_SAVE_TYPE_BMP, 0, 0, w, h);
+				printf("screenshot.bmp saved in working directory.\n");
+			}
 		});
 	}
 
