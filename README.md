@@ -1,7 +1,7 @@
 # deffered-lighting-demo
 Demonstration of deffered lighting.
 
-![demo screenshot](assets/textures/screenshot.bmp)
+<kdb><img src="assets/textures/screenshot.bmp" /></kdb>
 
 ## controls
 |key press| action|
