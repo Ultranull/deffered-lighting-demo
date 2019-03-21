@@ -51,4 +51,9 @@ inline void Buffer::setData(size_t size, GLenum usage) {
 	glBufferData(type, length * typeSize, NULL, usage);
 }
 
+class UniformBuffer : public Buffer {
 
+public:
+	UniformBuffer();
+	void blockBinding(GLuint program, GLuint index, const char * name);
+};

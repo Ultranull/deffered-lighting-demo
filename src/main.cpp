@@ -108,7 +108,7 @@ class Game :public App {
 	FrameBuffer passthrough,gBuffer;
 	vector<Light> lights;
 
-	Buffer cBuffer;
+	UniformBuffer cBuffer;
 
 	int lightidx = 0,sstep=0;
 	vector<vec3> colors{ {1,1,1},{1,0,0},{0,1,0},{0,0,1},{0,1,1},{1,0,1},{1,1,0} };
@@ -205,16 +205,12 @@ class Game :public App {
 		gBuffer.drawBuffers();
 		gBuffer.check();
 
-		cBuffer = Buffer(GL_UNIFORM_BUFFER);
+		cBuffer = UniformBuffer();
 		cBuffer.bind();
 		cBuffer.setData<mat4>(2, GL_DYNAMIC_DRAW);
 		cBuffer.setSubData(0, sizeof(glm::mat4), glm::value_ptr(cam.P()));
 		cBuffer.setSubData(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(cam.V()));
-
-
-		GLuint loc = glGetUniformBlockIndex(gbuff.getProgramID(), "camera");
-		glUniformBlockBinding(gbuff.getProgramID(), loc, 0);
-		glBindBufferBase(GL_UNIFORM_BUFFER, 0, cBuffer.id);
+		cBuffer.blockBinding(gbuff.getProgramID(), 0, "camera");
 		cBuffer.unbind();
 
 

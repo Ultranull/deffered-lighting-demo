@@ -57,3 +57,11 @@
  size_t Buffer::getTypeSize(){
 	 return typeSize;
  }
+
+ UniformBuffer::UniformBuffer() :Buffer(GL_UNIFORM_BUFFER) {}
+
+ void UniformBuffer::blockBinding(GLuint program, GLuint index, const char * name) {
+	 GLuint loc = glGetUniformBlockIndex(program, name);
+	 glUniformBlockBinding(program, loc, 0);
+	 glBindBufferBase(GL_UNIFORM_BUFFER, 0, id);
+ }
