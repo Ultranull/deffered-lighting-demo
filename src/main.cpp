@@ -88,14 +88,10 @@ Mesh loadOBJ(string fn) {
 }
 
 struct Light {
-	vec3 pos;
-	vec3 color;
-	float quad;
-	void bind(Program *shader, int i) {
-		shader->setUniform("lights[" + to_string(i) + "].pos", &pos);
-		shader->setUniform("lights[" + to_string(i) + "].color", &color);
-		shader->setUniform("lights[" + to_string(i) + "].quad", quad);
-	}
+	vec3 pos;   float pad0=-1;
+	vec3 color; float pad1=-1;
+	float quad; vec3 pad2=vec3(-1);
+	Light(vec3 p,vec3 c,float q):pos(p),color(c),quad(q) {}
 };
 
 
@@ -108,7 +104,7 @@ class Game :public App {
 	FrameBuffer passthrough,gBuffer;
 	vector<Light> lights;
 
-	UniformBuffer cBuffer;
+	UniformBuffer cBuffer,lBuffer;
 
 	int lightidx = 0,sstep=0;
 	vector<vec3> colors{ {1,1,1},{1,0,0},{0,1,0},{0,0,1},{0,1,1},{1,0,1},{1,1,0} };
@@ -182,7 +178,7 @@ class Game :public App {
 
 
 		lights = vector<Light>(100, Light{vec3(0),vec3(0),0});
-		lights[0] = (Light{ {0,2,0},{1,1,1},(1 / 2) });
+		lights[0] = (Light( {0,2,0},{1,1,1},(1.f / 2.f) ));
 
 		Buffer *lamp_ibo = lamp.vaObject.bindBuffer<Light>("instanced", GL_ARRAY_BUFFER);
 		lamp_ibo->setData(lights, GL_DYNAMIC_DRAW);
@@ -213,20 +209,32 @@ class Game :public App {
 		cBuffer.blockBinding(gbuff.getProgramID(), 0, "camera");
 		cBuffer.unbind();
 
+		lBuffer = UniformBuffer();
+		lBuffer.bind();
+		lBuffer.setData<Light>(lights, GL_DYNAMIC_DRAW);
+		lBuffer.blockBinding(lpass.getProgramID(), 1, "Lights");
+		lBuffer.unbind();
+
+
 
 
 		addInput(GLFW_KEY_E, [&](int action, int mods) {
 			if (action == GLFW_PRESS) {
 				unsigned int index = lightidx % lights.size();
-				lights[index] = Light{ 
+				lights[index] = Light(
 					vec4(cam.getPosition(),1),
 					vec4(colors[lightidx%colors.size()],1),
 					1/1.75
-				};
+				);
 
 				lamp.vaObject.updateData("instanced", sizeof(Light)*(index)+offsetof(Light, pos), sizeof(vec3), &lights[index].pos);
 				lamp.vaObject.updateData("instanced", sizeof(Light)*(index)+offsetof(Light, color), sizeof(vec3), &lights[index].color);
 				lamp.vaObject.unbind();
+
+
+				lBuffer.bind();
+				lBuffer.setSubData(sizeof(Light)*(index), sizeof(Light), &lights[index]);
+				lBuffer.unbind();
 
 				lightidx = lightidx + 1;
 			}
@@ -247,6 +255,7 @@ class Game :public App {
 
 	void onClose() {
 		cBuffer.    cleanup();
+		lBuffer.    cleanup();
 		passthrough.cleanup();
 		gBuffer.    cleanup();
 		monkey.     cleanup();
@@ -295,8 +304,6 @@ class Game :public App {
 		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("normal"));
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gBuffer.getTexture("albedo-spec"));
-		for (int i = 0; i < lights.size(); i++)
-			lights[i].bind(&lpass, i);
 		lpass.setUniform("position", 0);
 		lpass.setUniform("normal", 1);
 		lpass.setUniform("albedospec", 2); 

@@ -26,7 +26,7 @@ mat4 translate(vec3 pos){
 
 void main(){
 	gl_Position=projection*view*translate(offset)*model*vec4(vertpos,1);
-	lampcolor=instcolor;
+	lampcolor=instcolor; 
 	normal=vertnorm;
 }
 

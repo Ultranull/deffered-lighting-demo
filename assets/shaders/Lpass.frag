@@ -9,13 +9,17 @@ uniform sampler2D normal;
 uniform sampler2D albedospec;
 
 struct Light {
-	vec3 pos;
-	vec3 color;
-	float quad;
+	vec4 pos;   
+	vec4 color; 
+	float quad; 
 };
 
 const int NUM_LIGHTS=100;
-uniform Light lights[NUM_LIGHTS];
+//uniform Light lights[NUM_LIGHTS];
+
+layout(std140,binding=1)uniform Lights{
+	Light lights[NUM_LIGHTS];
+};
 
 uniform vec3 veiwPos;
 

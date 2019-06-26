@@ -62,6 +62,6 @@
 
  void UniformBuffer::blockBinding(GLuint program, GLuint index, const char * name) {
 	 GLuint loc = glGetUniformBlockIndex(program, name);
-	 glUniformBlockBinding(program, loc, 0);
-	 glBindBufferBase(GL_UNIFORM_BUFFER, 0, id);
+	 glUniformBlockBinding(program, loc, index);
+	 glBindBufferBase(GL_UNIFORM_BUFFER, index, id);
  }
